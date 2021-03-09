@@ -1,0 +1,18 @@
+name: UGATIT
+dependencies:
+  - python=3.5
+  - tensorflow-gpu
+  - tensorboard
+  - jupyter
+  - matplotlib
+  - numpy
+  - pip
+  - pip:
+    - opencv-python
+    - Pillow
+    - flask
+    - jsonpickle
+    - requests
+    - flask-uploads
+    - flask-dropzone
+    - boto3

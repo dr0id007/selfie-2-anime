@@ -40,9 +40,9 @@ patch_request_class(app)  # set maximum file size, default is 16MB
 def parse_args():
     desc = "Tensorflow implementation of U-GAT-IT"
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('--phase', type=str, default='train',
+    parser.add_argument('--phase', type=str, default='web',
                         help='[train / test / web / runner]')
-    parser.add_argument('--light', type=str2bool, default=False,
+    parser.add_argument('--light', type=str2bool, default=True,
                         help='[U-GAT-IT full version / U-GAT-IT light version]')
     parser.add_argument('--dataset', type=str,
                         default='selfie2anime', help='dataset_name')
@@ -305,7 +305,6 @@ def main():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-
     # set session for image results
     if "file_urls" not in session:
         session['file_urls'] = []
@@ -361,6 +360,58 @@ def index():
     except Exception as ex:
         print(ex)
     return render_template('index.html')
+
+
+@app.route('/api', methods=['GET'])
+def api():
+    try:
+        if request.method == 'POST':
+            file_obj = request.files
+            for f in file_obj:
+                file = request.files.get(f)
+
+                # convert string of image data to uint8
+                nparr = np.fromfile(file, np.uint8)
+                # decode image
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+                # parse arguments
+                args = parse_args()
+                if args is None:
+                    exit()
+
+                # open session
+                with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+                    gan = UGATIT(sess, args)
+
+                    # build graph
+                    gan.build_model()
+
+                    # show network architecture
+                    show_all_variables()
+
+                    # do some fancy processing here....
+                    # fake_img = gan.test_endpoint(img)
+
+                    try:
+                        # do some fancy processing here....
+                        gan.test_endpoint_init()
+                        fake_img = gan.test_endpoint(img)
+                    except Exception as e:
+                        print("ERROR: Processing image with GAN")
+                        print(e)
+                        raise e
+
+                    # save the file with to our photos folder
+                    filename = str(uuid.uuid1()) + '.png'
+                    cv2.imwrite('uploads/' + filename, fake_img)
+                    # append image urls
+                    file_urls.append(photos.url(filename))
+
+            session['file_urls'] = file_urls
+            return "uploading..."
+    except Exception as ex:
+        print(ex)
 
 
 @app.route('/results')

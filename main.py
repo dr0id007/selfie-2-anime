@@ -362,7 +362,7 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api', methods=['GET'])
+@app.route('/api', methods=['GET', 'POST'])
 def api():
     try:
         if request.method == 'POST':
